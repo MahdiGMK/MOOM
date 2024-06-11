@@ -1,0 +1,4 @@
+./src/core/adder.sv
+./src/core/alu.sv
+./src/core/multiplier.sv
+./src/core/register_file.sv
