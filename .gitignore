@@ -1,0 +1,6 @@
+# verilator output
+obj_dir/
+# modelsim output
+work/
+a.out
+verible.filelist
