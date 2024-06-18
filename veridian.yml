@@ -1,23 +1,27 @@
 include_dirs:
   - src
+  - src/core
 source_dirs:
   - src
-auto_search_workdir: true,
+  - src/core
+auto_search_workdir: true
 verible:
   syntax:
-    enabled: true,
+    enabled: true
     path: "verible-verilog-syntax"
   format:
-    enabled: true,
+    enabled: true
     path: "verible-verilog-format"
     args:
       - --indentation_spaces=4
 verilator:
   syntax:
-    enabled: true,
+    enabled: true
     path: "verilator"
     args:
       - --lint-only
       - --sv
+      - --timing
+      - -Isrc/core
       - -Wall
 log_level: Info
