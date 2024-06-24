@@ -8,7 +8,7 @@ module fpadder_test ();
     logic addnot_sub;
 
     fpaddsub #(
-        .NBIT(64),
+        .N_BIT(64),
         .EXP_BIT(11)
     ) fp (
         .a(a.value),
