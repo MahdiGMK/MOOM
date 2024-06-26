@@ -119,6 +119,7 @@ module fpadder_test ();
         repeat (16) begin
             j = 0;
             repeat (16) begin
+                addnot_sub = 0;
                 a = de_normal[i];
                 b = de_normal[j];
                 #1
@@ -129,6 +130,16 @@ module fpadder_test ();
                     out.fpvalue,
                     (a.fpvalue + b.fpvalue),
                     (a.fpvalue + b.fpvalue) == out.fpvalue
+                );
+                addnot_sub = 1;
+                #1
+                $display(
+                    "%20e + %20e = %20e vs %20e : judgement : %b",
+                    a.fpvalue,
+                    b.fpvalue,
+                    out.fpvalue,
+                    (a.fpvalue - b.fpvalue),
+                    (a.fpvalue - b.fpvalue) == out.fpvalue
                 );
 
                 j = j + 1;
