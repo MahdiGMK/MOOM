@@ -1,16 +1,9 @@
 module test ();
-    logic val;
-    x _x (.val(val));
+    logic [1:0] x;
     initial begin
-        $display(val);
-        val = !val;
-        $display(val);
-
+        x = 2;
+        x = x + 2 - 1;
+        $display(x);
     end
 endmodule
 // verilator lint_off DECLFILENAME
-module x (
-    output logic val
-);
-    assign val = 1;
-endmodule
