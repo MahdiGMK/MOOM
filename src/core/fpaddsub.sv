@@ -48,6 +48,7 @@ module fpaddsub #(
 
     logic a_sign, b_sign, out_sign;
     logic [EXT_MAN_BIT-1:0] a_man, tmp_man, b_man, out_man;
+    logic [MAN_BIT+1:0] res_man;
     logic [EXP_BIT-1:0] a_exp, b_exp, distance, out_exp;
     logic [LOG_BIT-1:0] i;
     always_comb begin : main
@@ -55,14 +56,17 @@ module fpaddsub #(
         a_sign = 1'bX;
         b_sign = 1'bX;
         out_sign = 1'bX;
-        a_man = {MAN_BIT + 3{1'bX}};
-        b_man = {MAN_BIT + 3{1'bX}};
-        out_man = {MAN_BIT + 3{1'bX}};
+        a_man = {EXT_MAN_BIT{1'bX}};
+        b_man = {EXT_MAN_BIT{1'bX}};
+        out_man = {EXT_MAN_BIT{1'bX}};
+        tmp_man = {EXT_MAN_BIT{1'bX}};
+        res_man = {MAN_BIT + 2{1'bX}};
         a_exp = {EXP_BIT{1'bX}};
         b_exp = {EXP_BIT{1'bX}};
         out_exp = {EXP_BIT{1'bX}};
         distance = {EXP_BIT{1'bX}};
         out = {N_BIT{1'bX}};
+        i = {LOG_BIT{1'bX}};
 
         if (isNAN[0] || isNAN[1]) begin
             out = P_NAN;
@@ -79,18 +83,18 @@ module fpaddsub #(
         else begin
             if (exp[0] < exp[1]) begin
                 a_sign = sign[1] ^ addnot_sub;
-                a_exp  = exp[1];
+                a_exp  = exp[1] + EXP_BIT'(exp[1] == 0);
                 a_man  = {2'b0, isNormal[1], man[1], {MAN_BIT + 1{1'b0}}};
                 b_sign = sign[0];
-                b_exp  = exp[0];
+                a_exp  = exp[0] + EXP_BIT'(exp[0] == 0);
                 b_man  = {2'b0, isNormal[0], man[0], {MAN_BIT + 1{1'b0}}};
             end
             else begin
                 a_sign = sign[0];
-                a_exp  = exp[0];
+                a_exp  = exp[0] + EXP_BIT'(exp[0] == 0);
                 a_man  = {2'b0, isNormal[0], man[0], {MAN_BIT + 1{1'b0}}};
                 b_sign = sign[1] ^ addnot_sub;
-                b_exp  = exp[1];
+                b_exp  = exp[1] + EXP_BIT'(exp[1] == 0);
                 b_man  = {2'b0, isNormal[1], man[1], {MAN_BIT + 1{1'b0}}};
             end
             // a_exp >= b_exp
@@ -108,25 +112,20 @@ module fpaddsub #(
                 i = {1'b1, {LOG_BIT - 1{1'b0}}};  // i = 100..00
                 repeat (LOG_BIT) begin
                     tmp_man = out_man << i;
-                    if ((tmp_man >> i) == out_man && out_exp > i) begin
-                        out_exp = out_exp - i;
+                    if ((tmp_man >> i) == out_man && out_exp > EXP_BIT'(i)) begin
+                        out_exp = out_exp - EXP_BIT'(i);
                         out_man = tmp_man;
                     end
                     i = i >> 1;
                 end
+                res_man = {1'b0 , out_man[EXT_MAN_BIT-1:MAN_BIT+3]} + (MAN_BIT+2)'(
+                            out_man[MAN_BIT+2] && (out_man[MAN_BIT+3] || |out_man[MAN_BIT+1:0])
+                        );
 
-                out_exp = out_man[EXT_MAN_BIT-1] ? out_exp : {EXP_BIT{1'b0}};
-                if (&out_exp) begin
-                    out = {out_sign, INF};
-                end
-                else begin
-                    out = {
-                        out_sign,
-                        out_exp,
-                        out_man[EXT_MAN_BIT-2:MAN_BIT+3] +
-                        (out_man[MAN_BIT+2] && (out_man[MAN_BIT+3] || |out_man[MAN_BIT+1:0]))
-                    };
-                end
+                out_exp = res_man[MAN_BIT+1] ? out_exp + 1 : out_exp;
+                res_man = res_man[MAN_BIT+1] ? res_man >> 1 : res_man;
+                out_exp = res_man[MAN_BIT] ? out_exp : 0;
+                out = &out_exp ? {out_sign, INF} : {out_sign, out_exp, res_man[MAN_BIT-1:0]};
             end
         end
     end
