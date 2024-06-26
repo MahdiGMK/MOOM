@@ -10,68 +10,92 @@ module fpaddsub #(
     output logic [N_BIT - 1:0] out
 );
 
+    logic isNormal[2], isDenormal[2], isINF[2], isNAN[2], sign[2];
+    logic [EXP_BIT-1:0] exp[2];
+    logic [MAN_BIT-1:0] man[2];
     fpseperator #(
         .NBIT(N_BIT),
         .EXP_BIT(EXP_BIT)
     ) aSep (
-        .value(a)
+        .value(a),
+        .isNormal(isNormal[0]),
+        .isDenormal(isDenormal[0]),
+        .isINF(isINF[0]),
+        .isNAN(isNAN[0]),
+        .sign(sign[0]),
+        .exp(exp[0]),
+        .man(man[0])
     );
     fpseperator #(
         .NBIT(N_BIT),
         .EXP_BIT(EXP_BIT)
     ) bSep (
-        .value(b)
+        .value(b),
+        .isNormal(isNormal[1]),
+        .isDenormal(isDenormal[1]),
+        .isINF(isINF[1]),
+        .isNAN(isNAN[1]),
+        .sign(sign[1]),
+        .exp(exp[1]),
+        .man(man[1])
     );
 
-    logic sub_oper;
-    logic [MAN_BIT+2:0] a_val, tmp, b_val, out_val;
-    logic [EXP_BIT-1:0] distance, out_exp;
-    logic msbShifted, otherShifted, out_sign;
+    logic a_sign, b_sign, out_sign;
+    logic [MAN_BIT+2 + MAN_BIT+1:0] a_man, tmp_man, b_man, out_man;
+    logic [EXP_BIT-1:0] a_exp, b_exp, distance, out_exp;
+    parameter logic [N_BIT-1:0] P_INF = {1'b0, EXP_BIT'((1 << EXP_BIT) - 1), {MAN_BIT{1'b0}}};
+    parameter logic [N_BIT-1:0] P_NAN = {
+        1'b0, EXP_BIT'((1 << EXP_BIT) - 1), 1'b1, {(MAN_BIT - 1) {1'b0}}
+    };
     always_comb begin : main
-        // (de)normal system
-        sub_oper = aSep.sign ^ bSep.sign ^ addnot_sub;
+        // default state
+        a_sign = 1'bX;
+        b_sign = 1'bX;
+        out_sign = 1'bX;
+        a_man = {MAN_BIT + 3{1'bX}};
+        b_man = {MAN_BIT + 3{1'bX}};
+        out_man = {MAN_BIT + 3{1'bX}};
+        a_exp = {EXP_BIT{1'bX}};
+        b_exp = {EXP_BIT{1'bX}};
+        out_exp = {EXP_BIT{1'bX}};
+        distance = {EXP_BIT{1'bX}};
+        out = {N_BIT{1'bX}};
 
-        a_val = {2'b00, aSep.isNormal, aSep.man};
-        b_val = {2'b00, bSep.isNormal, bSep.man};
-        msbShifted = 0;
-        otherShifted = 0;
-        if (aSep.exp < bSep.exp) begin
-            distance = (bSep.exp - aSep.exp - 1);
-            tmp = a_val >> distance;
-            otherShifted = |((tmp << distance) ^ a_val);
-            msbShifted = tmp[0];
-            a_val = tmp >> 1;
-            // rounding mechanism
-            if (msbShifted) if (otherShifted || a_val[0] != b_val[0]) a_val = a_val + 1;
-
-            out_exp = bSep.exp;
+        if (isNAN[0] || isNAN[1]) begin
+            out = P_NAN;
         end
-        else if (aSep.exp > bSep.exp) begin
-            distance = (aSep.exp - bSep.exp - 1);
-            tmp = b_val >> distance;
-            otherShifted = |((tmp << distance) ^ b_val);
-            msbShifted = tmp[0];
-            b_val = tmp >> 1;
-
-            // rounding mechanism
-            if (msbShifted) if (otherShifted || a_val[0] != b_val[0]) b_val = b_val + 1;
-
-            out_exp = aSep.exp;
+        else if (isINF[0] && isINF[1] && (sign[0] ^ sign[1] ^ addnot_sub)) begin
+            out = P_NAN;
         end
-
-        if (sub_oper) begin
-            out_val = a_val - b_val;
+        else if (isINF[0]) begin
+            out = a;
+        end
+        else if (isINF[1]) begin
+            out = b;
         end
         else begin
-            out_val = a_val + b_val;
+            if (exp[0] < exp[1]) begin
+                a_sign = sign[1] ^ addnot_sub;
+                a_exp  = exp[1];
+                a_man  = {2'b0, isNormal[1], man[1], {MAN_BIT + 1{1'b0}}};
+                b_sign = sign[0];
+                b_exp  = exp[0];
+                b_man  = {2'b0, isNormal[0], man[0], {MAN_BIT + 1{1'b0}}};
+            end
+            else begin
+                a_sign = sign[0];
+                a_exp  = exp[0];
+                a_man  = {2'b0, isNormal[0], man[0], {MAN_BIT + 1{1'b0}}};
+                b_sign = sign[1] ^ addnot_sub;
+                b_exp  = exp[1];
+                b_man  = {2'b0, isNormal[1], man[1], {MAN_BIT + 1{1'b0}}};
+            end
+            // a_exp >= b_exp
+            distance = a_exp - b_exp;
+            if (|distance) begin
+
+            end
         end
-
-        out_sign = aSep.sign ^ out_val[MAN_BIT+2];
-
-        if (out_val[MAN_BIT+2]) begin
-            out_val = -out_val;
-        end
-
     end
 endmodule
 
