@@ -40,13 +40,16 @@ module fpaddsub #(
         .man(man[1])
     );
 
-    logic a_sign, b_sign, out_sign;
-    logic [MAN_BIT+2 + MAN_BIT+1:0] a_man, tmp_man, b_man, out_man;
-    logic [EXP_BIT-1:0] a_exp, b_exp, distance, out_exp;
-    parameter logic [N_BIT-1:0] P_INF = {1'b0, EXP_BIT'((1 << EXP_BIT) - 1), {MAN_BIT{1'b0}}};
+    parameter int EXT_MAN_BIT = MAN_BIT + 3 + MAN_BIT + 1;
+    parameter logic [N_BIT-2:0] INF = {EXP_BIT'((1 << EXP_BIT) - 1), {MAN_BIT{1'b0}}};
     parameter logic [N_BIT-1:0] P_NAN = {
         1'b0, EXP_BIT'((1 << EXP_BIT) - 1), 1'b1, {(MAN_BIT - 1) {1'b0}}
     };
+
+    logic a_sign, b_sign, out_sign;
+    logic [EXT_MAN_BIT-1:0] a_man, tmp_man, b_man, out_man;
+    logic [EXP_BIT-1:0] a_exp, b_exp, distance, out_exp;
+    logic [LOG_BIT-1:0] i;
     always_comb begin : main
         // default state
         a_sign = 1'bX;
@@ -91,9 +94,34 @@ module fpaddsub #(
                 b_man  = {2'b0, isNormal[1], man[1], {MAN_BIT + 1{1'b0}}};
             end
             // a_exp >= b_exp
-            distance = a_exp - b_exp;
-            if (|distance) begin
+            b_man = b_man >> (a_exp - b_exp);
 
+            out_man = a_sign == b_sign ? a_man + b_man : a_man - b_man;
+            out_sign = a_sign ^ out_man[EXT_MAN_BIT-1];
+            out_man = (out_man[EXT_MAN_BIT-1] ? -out_man : out_man) << 1;
+            out_exp = a_exp + 1;
+            // normalize out_man
+            if (out_man == 0) begin
+                out = {N_BIT{1'b0}};
+            end
+            else begin
+                i = {1'b1, {LOG_BIT - 1{1'b0}}};  // i = 100..00
+                repeat (LOG_BIT) begin
+                    tmp_man = out_man << i;
+                    if ((tmp_man >> i) == out_man && out_exp > i) begin
+                        out_exp = out_exp - i;
+                        out_man = tmp_man;
+                    end
+                    i = i >> 1;
+                end
+
+                out_exp = out_man[EXT_MAN_BIT-1] ? out_exp : {EXP_BIT{1'b0}};
+                if (&out_exp) begin
+                    out = {out_sign, INF};
+                end
+                else begin
+                    out = {out_sign, out_exp, out_man[EXT_MAN_BIT-2:MAN_BIT+3]};
+                end
             end
         end
     end
