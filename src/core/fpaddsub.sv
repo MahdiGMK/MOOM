@@ -120,7 +120,12 @@ module fpaddsub #(
                     out = {out_sign, INF};
                 end
                 else begin
-                    out = {out_sign, out_exp, out_man[EXT_MAN_BIT-2:MAN_BIT+3]};
+                    out = {
+                        out_sign,
+                        out_exp,
+                        out_man[EXT_MAN_BIT-2:MAN_BIT+3] +
+                        (out_man[MAN_BIT+2] && (out_man[MAN_BIT+3] || |out_man[MAN_BIT+1:0]))
+                    };
                 end
             end
         end
