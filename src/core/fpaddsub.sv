@@ -42,14 +42,12 @@ module fpaddsub #(
 
     parameter int EXT_MAN_BIT = MAN_BIT + 3 + MAN_BIT + 1;
     parameter logic [N_BIT-2:0] INF = {EXP_BIT'((1 << EXP_BIT) - 1), {MAN_BIT{1'b0}}};
-    parameter logic [N_BIT-1:0] P_NAN = {
-        1'b0, EXP_BIT'((1 << EXP_BIT) - 1), 1'b1, {(MAN_BIT - 1) {1'b0}}
-    };
+    parameter logic [N_BIT-2:0] NAN = {EXP_BIT'((1 << EXP_BIT) - 1), 1'b1, {(MAN_BIT - 1) {1'b0}}};
 
     logic a_sign, b_sign, out_sign;
     logic [EXT_MAN_BIT-1:0] a_man, tmp_man, b_man, out_man;
     logic [MAN_BIT+1:0] res_man;
-    logic [EXP_BIT-1:0] a_exp, b_exp, distance, out_exp;
+    logic [EXP_BIT-1:0] a_exp, b_exp, out_exp;
     logic [LOG_BIT-1:0] i;
     always_comb begin : main
         // default state
@@ -64,15 +62,15 @@ module fpaddsub #(
         a_exp = {EXP_BIT{1'bX}};
         b_exp = {EXP_BIT{1'bX}};
         out_exp = {EXP_BIT{1'bX}};
-        distance = {EXP_BIT{1'bX}};
+        // distance = {EXP_BIT{1'bX}};
         out = {N_BIT{1'bX}};
         i = {LOG_BIT{1'bX}};
 
         if (isNAN[0] || isNAN[1]) begin
-            out = P_NAN;
+            out = {1'b0, NAN};
         end
         else if (isINF[0] && isINF[1] && (sign[0] ^ sign[1] ^ addnot_sub)) begin
-            out = P_NAN;
+            out = {1'b1, NAN};
         end
         else if (isINF[0]) begin
             out = a;
@@ -86,7 +84,7 @@ module fpaddsub #(
                 a_exp  = exp[1] + EXP_BIT'(exp[1] == 0);
                 a_man  = {2'b0, isNormal[1], man[1], {MAN_BIT + 1{1'b0}}};
                 b_sign = sign[0];
-                a_exp  = exp[0] + EXP_BIT'(exp[0] == 0);
+                b_exp  = exp[0] + EXP_BIT'(exp[0] == 0);
                 b_man  = {2'b0, isNormal[0], man[0], {MAN_BIT + 1{1'b0}}};
             end
             else begin
