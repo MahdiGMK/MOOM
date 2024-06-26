@@ -74,7 +74,7 @@ module fpaddsub #(
             out = a;
         end
         else if (isINF[1]) begin
-            out = b;
+            out = b ^ {addnot_sub, {N_BIT - 1{1'b0}}};
         end
         else begin
             if (exp[0] < exp[1]) begin
