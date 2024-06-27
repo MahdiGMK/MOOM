@@ -14,7 +14,7 @@ module fpaddsub #(
     logic [EXP_BIT-1:0] exp[2];
     logic [MAN_BIT-1:0] man[2];
     fpseperator #(
-        .NBIT(N_BIT),
+        .N_BIT(N_BIT),
         .EXP_BIT(EXP_BIT)
     ) aSep (
         .value(a),
@@ -27,7 +27,7 @@ module fpaddsub #(
         .man(man[0])
     );
     fpseperator #(
-        .NBIT(N_BIT),
+        .N_BIT(N_BIT),
         .EXP_BIT(EXP_BIT)
     ) bSep (
         .value(b),
