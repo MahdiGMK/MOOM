@@ -102,25 +102,29 @@ module fpaddsub #(
             out_sign = a_sign ^ out_man[EXT_MAN_BIT-1];
             out_man = (out_man[EXT_MAN_BIT-1] ? -out_man : out_man) << 1;
             out_exp = a_exp + 1;
-
             // normalize out_man
-            i = {1'b1, {LOG_BIT - 1{1'b0}}};  // i = 100..00
-            repeat (LOG_BIT) begin
-                tmp_man = out_man << i;
-                if ((tmp_man >> i) == out_man && out_exp > EXP_BIT'(i)) begin
-                    out_exp = out_exp - EXP_BIT'(i);
-                    out_man = tmp_man;
-                end
-                i = i >> 1;
+            if (out_man == 0) begin
+                out = {N_BIT{1'b0}};
             end
-            res_man = {1'b0 , out_man[EXT_MAN_BIT-1:MAN_BIT+3]} + (MAN_BIT+2)'(
+            else begin
+                i = {1'b1, {LOG_BIT - 1{1'b0}}};  // i = 100..00
+                repeat (LOG_BIT) begin
+                    tmp_man = out_man << i;
+                    if ((tmp_man >> i) == out_man && out_exp > EXP_BIT'(i)) begin
+                        out_exp = out_exp - EXP_BIT'(i);
+                        out_man = tmp_man;
+                    end
+                    i = i >> 1;
+                end
+                res_man = {1'b0 , out_man[EXT_MAN_BIT-1:MAN_BIT+3]} + (MAN_BIT+2)'(
                             out_man[MAN_BIT+2] && (out_man[MAN_BIT+3] || |out_man[MAN_BIT+1:0])
                         );
 
-            out_exp = res_man[MAN_BIT+1] ? out_exp + 1 : out_exp;
-            res_man = res_man[MAN_BIT+1] ? res_man >> 1 : res_man;
-            out_exp = res_man[MAN_BIT] ? out_exp : 0;
-            out = &out_exp ? {out_sign, INF} : {out_sign, out_exp, res_man[MAN_BIT-1:0]};
+                out_exp = res_man[MAN_BIT+1] ? out_exp + 1 : out_exp;
+                res_man = res_man[MAN_BIT+1] ? res_man >> 1 : res_man;
+                out_exp = res_man[MAN_BIT] ? out_exp : 0;
+                out = &out_exp ? {out_sign, INF} : {out_sign, out_exp, res_man[MAN_BIT-1:0]};
+            end
         end
     end
 endmodule

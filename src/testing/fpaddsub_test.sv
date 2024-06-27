@@ -146,25 +146,6 @@ module fpadder_test ();
             end
             i = i + 1;
         end
-
-
-        //
-        // a.fpvalue = 123;
-        // b.fpvalue = -0.23234;
-        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        //
-        // a.value = {1'b0, 11'b00000000000, 52'b0000000000000000000000000000000000001000000000000001};
-        // b.value = {1'b0, 11'b00000000000, 52'b0000000000000000000000000000000000000000100001000000};
-        // #1 $display("%.40e + %.40e = %.40e", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true result : %0.40e", a.fpvalue + b.fpvalue);
-        //
-        // a.value = {1'b0, 11'b11111111110, 52'b1111111111111111111111111111111111111111111111111111};
-        // b.value = {1'b0, 11'b11111001001, 52'b0000000000000000000000000000000000000000000000000000};
-        // #1 $display("%.40e + %.40e = %.40e", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true result : %0.40e", a.fpvalue + b.fpvalue);
-        // $display("%b", a.value);
-        // $display("%b", b.value);
-        // $display("%b", out.value);
     end
 
 endmodule

@@ -26,6 +26,7 @@ module fpadder_test ();
     fp32_t pinf, ninf, nan;
 
     logic [3:0] i, j;
+    real tres;
 
     always #1 clk = !clk;
     initial begin
@@ -65,17 +66,18 @@ module fpadder_test ();
         de_normal[7].value = {
             1'b0, 11'b00000000001, 52'b0000000000111111111111111111111111100000000000000000
         };
+
         de_normal[8].value = {
-            1'b0, 11'b00000000001, 52'b0000000000000000000000000000111111111111111111111111
+            1'b0, 11'b01111111111, 52'b0000000000000000000000000000111111111111111111111111
         };
         de_normal[9].value = {
-            1'b0, 11'b00000000011, 52'b1111111111111110000000000000000000000000000000000000
+            1'b0, 11'b10000000011, 52'b1111111111111110000000000000000000000000000000000000
         };
         de_normal[10].value = {
-            1'b0, 11'b00000000010, 52'b0000000000001111111111111111111111111111000000000000
+            1'b0, 11'b00111111111, 52'b0000000000001111111111111111111111111111000000000000
         };
         de_normal[11].value = {
-            1'b0, 11'b00000000011, 52'b0000000000000000000000000000000011111111111111111111
+            1'b0, 11'b10000000001, 52'b0000000000000000000000000000000011111111111111111111
         };
 
 
@@ -94,95 +96,62 @@ module fpadder_test ();
 
         a.fpvalue = 1;
         b.fpvalue = 2;
-        $display("true = %f", (a.fpvalue * b.fpvalue));
+        tres = (a.fpvalue + 0.0) * (b.fpvalue + 0.0);
         start = 1;
         #2 start = 0;
-        wait (ready) $display("%t -- %f * %f = %f", $time, a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue * b.fpvalue));
-
-        a.fpvalue = 2;
-        b.fpvalue = 5;
-        start = 1;
-        #4 start = 0;
         wait (ready);
-        $display("%t -- %f * %f = %f", $time, a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue * b.fpvalue));
+        $display("%f * %f = %f vs %f", a.fpvalue, b.fpvalue, out.fpvalue, tres);
 
-        // a = pinf;
-        // b = ninf;
-        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true = %f", (a.fpvalue + b.fpvalue));
-        //
-        // a = pinf;
-        // b = pinf;
-        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true = %f", (a.fpvalue + b.fpvalue));
-        //
-        // a = ninf;
-        // b = ninf;
-        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true = %f", (a.fpvalue + b.fpvalue));
-        //
-        // a = nan;
-        // b = pinf;
-        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true = %f", (a.fpvalue + b.fpvalue));
-        //
-        // a = ninf;
-        // b = nan;
-        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true = %f", (a.fpvalue + b.fpvalue));
+        a = pinf;
+        b = ninf;
+        tres = (a.fpvalue + 0.0) * (b.fpvalue + 0.0);
+        start = 1;
+        #2 start = 0;
+        wait (ready);
+        $display("%f * %f = %f vs %f", a.fpvalue, b.fpvalue, out.fpvalue, tres);
 
-        // i = 0;
-        // repeat (16) begin
-        //     j = 0;
-        //     repeat (16) begin
-        //         addnot_sub = 0;
-        //         a = de_normal[i];
-        //         b = de_normal[j];
-        //         #1
-        //         $display(
-        //             "%20e + %20e = %20e vs %20e : judgement : %b",
-        //             a.fpvalue,
-        //             b.fpvalue,
-        //             out.fpvalue,
-        //             (a.fpvalue + b.fpvalue),
-        //             (a.fpvalue + b.fpvalue) == out.fpvalue
-        //         );
-        //         addnot_sub = 1;
-        //         #1
-        //         $display(
-        //             "%20e + %20e = %20e vs %20e : judgement : %b",
-        //             a.fpvalue,
-        //             b.fpvalue,
-        //             out.fpvalue,
-        //             (a.fpvalue - b.fpvalue),
-        //             (a.fpvalue - b.fpvalue) == out.fpvalue
-        //         );
-        //
-        //         j = j + 1;
-        //     end
-        //     i = i + 1;
-        // end
+        a = nan;
+        b = ninf;
+        tres = (a.fpvalue + 0.0) * (b.fpvalue + 0.0);
+        start = 1;
+        #2 start = 0;
+        wait (ready);
+        $display("%f * %f = %f vs %f", a.fpvalue, b.fpvalue, out.fpvalue, tres);
 
+        a.fpvalue = 0;
+        b = ninf;
+        tres = (a.fpvalue + 0.0) * (b.fpvalue + 0.0);
+        start = 1;
+        #2 start = 0;
+        wait (ready);
+        $display("%f * %f = %f vs %f", a.fpvalue, b.fpvalue, out.fpvalue, tres);
 
-        //
-        // a.fpvalue = 123;
-        // b.fpvalue = -0.23234;
-        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        //
-        // a.value = {1'b0, 11'b00000000000, 52'b0000000000000000000000000000000000001000000000000001};
-        // b.value = {1'b0, 11'b00000000000, 52'b0000000000000000000000000000000000000000100001000000};
-        // #1 $display("%.40e + %.40e = %.40e", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true result : %0.40e", a.fpvalue + b.fpvalue);
-        //
-        // a.value = {1'b0, 11'b11111111110, 52'b1111111111111111111111111111111111111111111111111111};
-        // b.value = {1'b0, 11'b11111001001, 52'b0000000000000000000000000000000000000000000000000000};
-        // #1 $display("%.40e + %.40e = %.40e", a.fpvalue, b.fpvalue, out.fpvalue);
-        // $display("true result : %0.40e", a.fpvalue + b.fpvalue);
-        // $display("%b", a.value);
-        // $display("%b", b.value);
-        // $display("%b", out.value);
+        i = 0;
+        repeat (16) begin
+            j = 0;
+            repeat (16) begin
+                a = de_normal[i];
+                b = de_normal[j];
+                tres = (a.fpvalue + 0.0) * (b.fpvalue + 0.0);
+                // tres = 1.0 * a.fpvalue * b.fpvalue;
+                start = 1;
+                #2 start = 0;
+                wait (ready)
+                    $display(
+                        "%d,%d : ",
+                        i,
+                        j,
+                        "%20e * %20e = %20e vs %20e : judgement : %b",
+                        a.fpvalue,
+                        b.fpvalue,
+                        out.fpvalue,
+                        tres,
+                        tres == out.fpvalue
+                    );
+                j = j + 1;
+            end
+            i = i + 1;
+        end
     end
 
 endmodule

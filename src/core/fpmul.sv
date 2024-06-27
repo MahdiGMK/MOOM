@@ -74,7 +74,8 @@ module fpmul #(
             out = {sign[0] ^ sign[1], NAN};
         end
         else if (isINF[0] || isINF[1]) begin
-            out = {sign[0] ^ sign[1], INF};
+            if (a[N_BIT-2:0] == 0) out = {sign[0] ^ sign[1], NAN};
+            else out = {sign[0] ^ sign[1], INF};
         end
         else begin
             out_exp = exp[0] + EXP_BIT'(exp[0] == 0) + exp[1] + EXP_BIT'(exp[1] == 0);
