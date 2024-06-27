@@ -74,7 +74,7 @@ module fpmul #(
             out = {sign[0] ^ sign[1], NAN};
         end
         else if (isINF[0] || isINF[1]) begin
-            if (a[N_BIT-2:0] == 0) out = {sign[0] ^ sign[1], NAN};
+            if (a[N_BIT-2:0] == 0 || b[N_BIT-2:0] == 0) out = {sign[0] ^ sign[1], NAN};
             else out = {sign[0] ^ sign[1], INF};
         end
         else begin
@@ -101,7 +101,8 @@ module fpmul #(
                         );
 
             out_exp = res_man[MAN_BIT+1] ? out_exp : 0;
-            res_man = res_man[MAN_BIT+1] ? res_man >> 1 : res_man;
+            // res_man = res_man[MAN_BIT+1] ? res_man >> 1 : res_man;
+            res_man = res_man >> 1;
             if (out_exp[EXP_BIT] || &out_exp[EXP_BIT-1:0]) out = {sign[0] ^ sign[1], INF};
             else out = {sign[0] ^ sign[1], out_exp[EXP_BIT-1:0], res_man[MAN_BIT-1:0]};
 
