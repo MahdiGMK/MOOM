@@ -94,18 +94,18 @@ module fpadder_test ();
 
         a.fpvalue = 1;
         b.fpvalue = 2;
+        $display("true = %f", (a.fpvalue * b.fpvalue));
         start = 1;
         #2 start = 0;
-        wait (ready)
-            $display("%t -- %f * %f = %f , ", $time, a.fpvalue, b.fpvalue, out.fpvalue, ready);
+        wait (ready) $display("%t -- %f * %f = %f", $time, a.fpvalue, b.fpvalue, out.fpvalue);
         $display("true = %f", (a.fpvalue * b.fpvalue));
 
         a.fpvalue = 2;
         b.fpvalue = 5;
         start = 1;
-        #2 start = 0;
-        wait (ready)
-            $display("%t -- %f * %f = %f , ", $time, a.fpvalue, b.fpvalue, out.fpvalue, ready);
+        #4 start = 0;
+        wait (ready);
+        $display("%t -- %f * %f = %f", $time, a.fpvalue, b.fpvalue, out.fpvalue);
         $display("true = %f", (a.fpvalue * b.fpvalue));
 
         // a = pinf;

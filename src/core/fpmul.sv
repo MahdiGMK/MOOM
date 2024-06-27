@@ -56,13 +56,20 @@ module fpmul #(
         .out(mulOut)
     );
 
-    logic [  EXP_BIT:0] out_exp;
-    logic [MAN_BIT+1:0] out_man;
+    logic [EXP_BIT:0] out_exp;
+    logic [EXT_MAN_BIT-1:0] out_man, tmp_man;
+    logic [MAN_BIT+1:0] res_man;
+    logic [LOG_BIT-1:0] i;
 
     parameter logic [N_BIT-2:0] INF = {EXP_BIT'((1 << EXP_BIT) - 1), {MAN_BIT{1'b0}}};
     parameter logic [N_BIT-2:0] NAN = {EXP_BIT'((1 << EXP_BIT) - 1), 1'b1, {(MAN_BIT - 1) {1'b0}}};
 
     always_comb begin
+        res_man = {MAN_BIT + 2{1'bX}};
+        tmp_man = {EXT_MAN_BIT{1'bX}};
+        out_man = {EXT_MAN_BIT{1'bX}};
+        out_exp = {EXP_BIT + 1{1'bX}};
+        i = {LOG_BIT{1'bX}};
         if (isNAN[0] || isNAN[1]) begin
             out = {sign[0] ^ sign[1], NAN};
         end
@@ -70,24 +77,33 @@ module fpmul #(
             out = {sign[0] ^ sign[1], INF};
         end
         else begin
-            // out_man =  mulOut[EXT_MAN_BIT-1:MAN_BIT+0] + (MAN_BIT+2)'(
-            // mulOut[MAN_BIT] && (mulOut[MAN_BIT+1] || |mulOut[MAN_BIT-1:0])
-            // );
             out_exp = exp[0] + EXP_BIT'(exp[0] == 0) + exp[1] + EXP_BIT'(exp[1] == 0);
-            if (out_exp <= EXP_BIAS) begin
-                // out_exp-BIAS -> 1
-                // out_man >> (1+BIAS-out_exp)
+            if (out_exp < (EXP_BIT + 1)'(EXP_BIAS)) begin
+                out_man = mulOut >> (EXP_BIAS - out_exp);
+                out_exp = 1;
             end
             else begin
-                out_exp = out_exp - EXP_BIAS;
-                out_man = out_man[MAN_BIT+1] ? out_man >> 1 : out_man;
-                if (out_exp[EXP_BIT] || &out_exp[EXP_BIT-1:0]) begin
-                    out = {sign[0] ^ sign[1], INF};
-                end
-                else begin
-                    out = {sign[0] ^ sign[1], out_exp[EXP_BIT-1:0], out_man[MAN_BIT-1:0]};
+                out_man = mulOut;
+                out_exp = out_exp - EXP_BIAS + 1;
+                i = {1'b1, {LOG_BIT - 1{1'b0}}};  // i = 100..00
+                repeat (LOG_BIT) begin
+                    tmp_man = out_man << i;
+                    if ((tmp_man >> i) == out_man && out_exp > (EXP_BIT + 1)'(i)) begin
+                        out_exp = out_exp - EXP_BIT'(i);
+                        out_man = tmp_man;
+                    end
+                    i = i >> 1;
                 end
             end
+            res_man = out_man[EXT_MAN_BIT-1:MAN_BIT] + (MAN_BIT+2)'(
+                            out_man[MAN_BIT] && (out_man[MAN_BIT+1] || |out_man[MAN_BIT-1:0])
+                        );
+
+            out_exp = res_man[MAN_BIT+1] ? out_exp : 0;
+            res_man = res_man[MAN_BIT+1] ? res_man >> 1 : res_man;
+            if (out_exp[EXP_BIT] || &out_exp[EXP_BIT-1:0]) out = {sign[0] ^ sign[1], INF};
+            else out = {sign[0] ^ sign[1], out_exp[EXP_BIT-1:0], res_man[MAN_BIT-1:0]};
+
         end
     end
 
