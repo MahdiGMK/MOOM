@@ -6,15 +6,20 @@ module fpadder_test ();
 
     fp32_t a, b, out, true_val;
     logic addnot_sub;
+    logic clk;
+    logic start;
+    logic ready;
 
-    fpaddsub #(
+    fpmul #(
         .LOG_BIT(6),
         .EXP_BIT(11)
     ) fp (
         .a(a.value),
         .b(b.value),
         .out(out.value),
-        .addnot_sub(addnot_sub)
+        .ready(ready),
+        .clk(clk),
+        .start(start)
     );
 
     fp32_t de_normal[16];
@@ -22,7 +27,9 @@ module fpadder_test ();
 
     logic [3:0] i, j;
 
+    always #1 clk = !clk;
     initial begin
+        clk = 0;
         pinf.value = {
             1'b0, 11'b11111111111, 52'b0000000000000000000000000000000000000000000000000000
         };
@@ -87,65 +94,76 @@ module fpadder_test ();
 
         a.fpvalue = 1;
         b.fpvalue = 2;
-        #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue + b.fpvalue));
+        start = 1;
+        #2 start = 0;
+        wait (ready)
+            $display("%t -- %f * %f = %f , ", $time, a.fpvalue, b.fpvalue, out.fpvalue, ready);
+        $display("true = %f", (a.fpvalue * b.fpvalue));
 
-        a = pinf;
-        b = ninf;
-        #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue + b.fpvalue));
+        a.fpvalue = 2;
+        b.fpvalue = 5;
+        start = 1;
+        #2 start = 0;
+        wait (ready)
+            $display("%t -- %f * %f = %f , ", $time, a.fpvalue, b.fpvalue, out.fpvalue, ready);
+        $display("true = %f", (a.fpvalue * b.fpvalue));
 
-        a = pinf;
-        b = pinf;
-        #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue + b.fpvalue));
+        // a = pinf;
+        // b = ninf;
+        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
+        // $display("true = %f", (a.fpvalue + b.fpvalue));
+        //
+        // a = pinf;
+        // b = pinf;
+        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
+        // $display("true = %f", (a.fpvalue + b.fpvalue));
+        //
+        // a = ninf;
+        // b = ninf;
+        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
+        // $display("true = %f", (a.fpvalue + b.fpvalue));
+        //
+        // a = nan;
+        // b = pinf;
+        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
+        // $display("true = %f", (a.fpvalue + b.fpvalue));
+        //
+        // a = ninf;
+        // b = nan;
+        // #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
+        // $display("true = %f", (a.fpvalue + b.fpvalue));
 
-        a = ninf;
-        b = ninf;
-        #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue + b.fpvalue));
-
-        a = nan;
-        b = pinf;
-        #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue + b.fpvalue));
-
-        a = ninf;
-        b = nan;
-        #1 $display("%f + %f = %f", a.fpvalue, b.fpvalue, out.fpvalue);
-        $display("true = %f", (a.fpvalue + b.fpvalue));
-
-        i = 0;
-        repeat (16) begin
-            j = 0;
-            repeat (16) begin
-                addnot_sub = 0;
-                a = de_normal[i];
-                b = de_normal[j];
-                #1
-                $display(
-                    "%20e + %20e = %20e vs %20e : judgement : %b",
-                    a.fpvalue,
-                    b.fpvalue,
-                    out.fpvalue,
-                    (a.fpvalue + b.fpvalue),
-                    (a.fpvalue + b.fpvalue) == out.fpvalue
-                );
-                addnot_sub = 1;
-                #1
-                $display(
-                    "%20e + %20e = %20e vs %20e : judgement : %b",
-                    a.fpvalue,
-                    b.fpvalue,
-                    out.fpvalue,
-                    (a.fpvalue - b.fpvalue),
-                    (a.fpvalue - b.fpvalue) == out.fpvalue
-                );
-
-                j = j + 1;
-            end
-            i = i + 1;
-        end
+        // i = 0;
+        // repeat (16) begin
+        //     j = 0;
+        //     repeat (16) begin
+        //         addnot_sub = 0;
+        //         a = de_normal[i];
+        //         b = de_normal[j];
+        //         #1
+        //         $display(
+        //             "%20e + %20e = %20e vs %20e : judgement : %b",
+        //             a.fpvalue,
+        //             b.fpvalue,
+        //             out.fpvalue,
+        //             (a.fpvalue + b.fpvalue),
+        //             (a.fpvalue + b.fpvalue) == out.fpvalue
+        //         );
+        //         addnot_sub = 1;
+        //         #1
+        //         $display(
+        //             "%20e + %20e = %20e vs %20e : judgement : %b",
+        //             a.fpvalue,
+        //             b.fpvalue,
+        //             out.fpvalue,
+        //             (a.fpvalue - b.fpvalue),
+        //             (a.fpvalue - b.fpvalue) == out.fpvalue
+        //         );
+        //
+        //         j = j + 1;
+        //     end
+        //     i = i + 1;
+        // end
 
 
         //

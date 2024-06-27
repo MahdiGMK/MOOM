@@ -63,20 +63,31 @@ module fpmul #(
     parameter logic [N_BIT-2:0] NAN = {EXP_BIT'((1 << EXP_BIT) - 1), 1'b1, {(MAN_BIT - 1) {1'b0}}};
 
     always_comb begin
-        out_man =  mulOut[EXT_MAN_BIT-1:MAN_BIT+0] + (MAN_BIT+2)'(
-            mulOut[MAN_BIT] && (mulOut[MAN_BIT+1] || |mulOut[MAN_BIT-1:0])
-            );
-        out_exp = exp[0] + exp[1] - EXP_BIAS + EXP_BIT'(out_man[MAN_BIT+1]);
-        out_man = out_man[MAN_BIT+1] ? out_man >> 1 : out_man;
-
         if (isNAN[0] || isNAN[1]) begin
             out = {sign[0] ^ sign[1], NAN};
         end
-        else if (out_exp[EXP_BIT] || &out_exp[EXP_BIT-1:0]) begin
+        else if (isINF[0] || isINF[1]) begin
             out = {sign[0] ^ sign[1], INF};
         end
         else begin
-            out = {sign[0] ^ sign[1], out_exp[EXP_BIT-1:0], out_man[MAN_BIT-1:0]};
+            // out_man =  mulOut[EXT_MAN_BIT-1:MAN_BIT+0] + (MAN_BIT+2)'(
+            // mulOut[MAN_BIT] && (mulOut[MAN_BIT+1] || |mulOut[MAN_BIT-1:0])
+            // );
+            out_exp = exp[0] + EXP_BIT'(exp[0] == 0) + exp[1] + EXP_BIT'(exp[1] == 0);
+            if (out_exp <= EXP_BIAS) begin
+                // out_exp-BIAS -> 1
+                // out_man >> (1+BIAS-out_exp)
+            end
+            else begin
+                out_exp = out_exp - EXP_BIAS;
+                out_man = out_man[MAN_BIT+1] ? out_man >> 1 : out_man;
+                if (out_exp[EXP_BIT] || &out_exp[EXP_BIT-1:0]) begin
+                    out = {sign[0] ^ sign[1], INF};
+                end
+                else begin
+                    out = {sign[0] ^ sign[1], out_exp[EXP_BIT-1:0], out_man[MAN_BIT-1:0]};
+                end
+            end
         end
     end
 
