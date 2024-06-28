@@ -9,15 +9,15 @@ module fpu #(
     input clk,
     input [1:0] op,
     output logic [N_BIT - 1:0] out,
-    output ready
+    output logic ready
 );
 
     logic [1:0] lastOp;
     logic [N_BIT-1:0] addsub_out, mul_out;
     logic mul_ready;
     logic start = op != lastOp;  //?
-    assign ready = ~op[1] | mul_ready;
-    assign out   = op[1] ? mul_out : addsub_out;
+    assign ready = ~op[1] | op[0] | mul_ready;
+    assign out   = op[1] ? (op[0] ? {1'b0, a[N_BIT-2:0]} : mul_out) : addsub_out;
     fpaddsub #(
         .LOG_BIT(LOG_BIT),
         .EXP_BIT(EXP_BIT)
